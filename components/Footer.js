@@ -11,13 +11,19 @@ export default function Footer() {
           </div>
 
           <div className="flex items-center gap-6">
-            {['Movies', 'TV Shows', 'Top Rated', 'Coming Soon'].map((link) => (
-              <button
-                key={link}
+            {[
+              { label: 'Movies', href: '/movies' },
+              { label: 'TV Shows', href: '/shows' },
+              { label: 'Top Rated', href: '/top-rated' },
+              { label: 'Coming Soon', href: '/movies' },
+            ].map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
                 className="text-sm text-flicker-gray hover:text-white transition-colors duration-200"
               >
-                {link}
-              </button>
+                {link.label}
+              </a>
             ))}
           </div>
 

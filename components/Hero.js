@@ -77,7 +77,7 @@ export default function Hero({ movies }) {
 
               <div className="flex flex-wrap gap-4">
                 <motion.button
-                  onClick={() => router.push(`/movie/${movie.id}`)}
+                  onClick={() => router.push(`/${movie.media_type === 'tv' ? 'tv' : 'movie'}/${movie.id}`)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-2 bg-white text-black font-semibold px-8 py-3.5 rounded-full text-sm hover:bg-white/90 transition-all duration-200"
@@ -85,7 +85,7 @@ export default function Hero({ movies }) {
                   ▶ Watch Now
                 </motion.button>
                 <motion.button
-                  onClick={() => router.push(`/movie/${movie.id}`)}
+                  onClick={() => router.push(`/${movie.media_type === 'tv' ? 'tv' : 'movie'}/${movie.id}`)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 text-white font-medium px-8 py-3.5 rounded-full text-sm hover:bg-white/20 transition-all duration-200"

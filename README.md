@@ -1,6 +1,11 @@
 # Cineflicker 🎬
 
-A movie and TV show discovery app built with Next.js. Uses the TMDB API to show trending, popular, and top rated content.
+<div align="center">
+  <img src="screenshots/Cineficker Hero.png" width="600" />
+  <img src="screenshots/Cineficker Hero Mobile.png" width="200" />
+</div>
+
+A movie and TV show discovery app built with Next.js 14. Uses the TMDB API to show trending, popular, and top rated content.
 
 ## Features
 
@@ -9,6 +14,16 @@ A movie and TV show discovery app built with Next.js. Uses the TMDB API to show 
 - Search across movies and TV shows
 - Auto-rotating hero section
 - Fully responsive
+
+<div align="center">
+  <img src="screenshots/Cineflicker Catalogs.png" width="600" />
+  <img src="screenshots/Cineflicker Catalogs Mobile.png" width="200" />
+</div>
+
+<div align="center">
+  <img src="screenshots/Cineflicker Search.png" width="600" />
+  <img src="screenshots/Cineflicker Search Mobile.png" width="200" />
+</div>
 
 ## Tech Stack
 
