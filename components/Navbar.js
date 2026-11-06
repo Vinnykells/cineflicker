@@ -1,14 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { searchMulti, getImageUrl } from '@/lib/tmdb'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [suggestions, setSuggestions] = useState([])
   const router = useRouter()
+  const debounceRef = useRef(null)
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -16,14 +19,43 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    if (!query.trim()) { setSuggestions([]); return }
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const { data } = await searchMulti(query)
+        setSuggestions(data.results.filter((r) => r.media_type !== 'person').slice(0, 6))
+      } catch { setSuggestions([]) }
+    }, 300)
+    return () => clearTimeout(debounceRef.current)
+  }, [query])
+
   const handleSearch = (e) => {
     e.preventDefault()
     if (query.trim()) {
       router.push(`/search?q=${encodeURIComponent(query.trim())}`)
       setSearchOpen(false)
       setQuery('')
+      setSuggestions([])
     }
   }
+
+  const handleSuggestionClick = (item) => {
+    const type = item.media_type === 'tv' ? 'tv' : 'movie'
+    router.push(`/${type}/${item.id}`)
+    setSearchOpen(false)
+    setQuery('')
+    setSuggestions([])
+  }
+
+  const closeSearch = () => { setSearchOpen(false); setQuery(''); setSuggestions([]) }
+
+  useEffect(() => {
+    const handleKeyDown = (e) => { if (e.key === 'Escape') closeSearch() }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <>
@@ -52,6 +84,8 @@ export default function Navbar() {
               { label: 'Movies', href: '/movies' },
               { label: 'TV Shows', href: '/shows' },
               { label: 'Top Rated', href: '/top-rated' },
+              { label: 'Genres', href: '/genres' },
+              { label: 'Watchlist', href: '/watchlist' },
             ].map((link) => (
               <button
                 key={link.label}
@@ -81,7 +115,7 @@ export default function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-xl flex items-start justify-center pt-32 px-6"
-            onClick={(e) => { if (e.target === e.currentTarget) setSearchOpen(false) }}
+            onClick={(e) => { if (e.target === e.currentTarget) closeSearch() }}
           >
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -107,6 +141,39 @@ export default function Navbar() {
                   </button>
                 </div>
               </form>
+
+              {suggestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 bg-flicker-card border border-flicker-border rounded-2xl overflow-hidden"
+                >
+                  {suggestions.map((item) => {
+                    const title = item.title || item.name
+                    const year = (item.release_date || item.first_air_date)?.split('-')[0]
+                    const poster = getImageUrl(item.poster_path, 'w92')
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleSuggestionClick(item)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left border-b border-flicker-border last:border-0"
+                      >
+                        <div className="w-8 h-12 rounded overflow-hidden bg-flicker-dark flex-shrink-0">
+                          {poster
+                            ? <img src={poster} alt={title} className="w-full h-full object-cover" />
+                            : <div className="w-full h-full flex items-center justify-center text-xs">🎬</div>
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm font-medium truncate">{title}</p>
+                          <p className="text-flicker-gray text-xs">{item.media_type === 'tv' ? 'TV Show' : 'Movie'}{year ? ` · ${year}` : ''}</p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </motion.div>
+              )}
+
               <p className="text-flicker-gray text-sm mt-4 text-center">Press ESC to close</p>
             </motion.div>
           </motion.div>

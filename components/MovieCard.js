@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { getImageUrl } from '@/lib/tmdb'
@@ -8,12 +8,33 @@ import { getImageUrl } from '@/lib/tmdb'
 export default function MovieCard({ movie, type = 'movie' }) {
   const router = useRouter()
   const [imageError, setImageError] = useState(false)
+  const [inWatchlist, setInWatchlist] = useState(false)
 
   const title = movie.title || movie.name
   const date = movie.release_date || movie.first_air_date
   const year = date?.split('-')[0]
   const rating = movie.vote_average?.toFixed(1)
   const imageUrl = getImageUrl(movie.poster_path, 'w342')
+
+  useEffect(() => {
+    try {
+      const list = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
+      setInWatchlist(list.some((i) => i.id === movie.id))
+    } catch {}
+  }, [movie.id])
+
+  const toggleWatchlist = (e) => {
+    e.stopPropagation()
+    try {
+      const list = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
+      const exists = list.some((i) => i.id === movie.id)
+      const updated = exists
+        ? list.filter((i) => i.id !== movie.id)
+        : [{ id: movie.id, title, type, poster: movie.poster_path, date }, ...list]
+      localStorage.setItem('cineflicker_watchlist', JSON.stringify(updated))
+      setInWatchlist(!exists)
+    } catch {}
+  }
 
   return (
     <motion.div
@@ -50,6 +71,17 @@ export default function MovieCard({ movie, type = 'movie' }) {
             {type === 'tv' ? 'TV' : 'Film'}
           </span>
         </div>
+
+        <button
+          onClick={toggleWatchlist}
+          className={`absolute bottom-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all duration-200 opacity-0 group-hover:opacity-100 ${
+            inWatchlist
+              ? 'bg-flicker-red text-white'
+              : 'bg-black/70 text-white hover:bg-flicker-red'
+          }`}
+        >
+          {inWatchlist ? '✓' : '+'}
+        </button>
 
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
           <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center">

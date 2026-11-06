@@ -1,6 +1,7 @@
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
 import MovieSection from '@/components/MovieSection'
+import ContinueWatching from '@/components/ContinueWatching'
 import Footer from '@/components/Footer'
 import {
   getTrending,
@@ -24,6 +25,7 @@ export default async function Home() {
       <Navbar />
       <Hero movies={trending.data.results} />
       <div className="space-y-16 pb-20">
+        <ContinueWatching />
         <MovieSection title="Trending This Week" movies={trending.data.results} type="movie" />
         <MovieSection title="Popular Movies" movies={popular.data.results} type="movie" />
         <MovieSection title="Top Rated" movies={topRated.data.results} type="movie" />

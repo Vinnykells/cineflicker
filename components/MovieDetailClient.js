@@ -1,13 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { getImageUrl, getBackdropUrl } from '@/lib/tmdb'
+import { getImageUrl, getBackdropUrl, getSeasonDetails } from '@/lib/tmdb'
 import MovieCard from './MovieCard'
 
 export default function MovieDetailClient({ movie, type }) {
   const router = useRouter()
+
+  const [showPlayer, setShowPlayer] = useState(false)
+  const [selectedSeason, setSelectedSeason] = useState(null)
+  const [selectedEpisode, setSelectedEpisode] = useState(null)
+  const [episodes, setEpisodes] = useState([])
+  const [loadingEpisodes, setLoadingEpisodes] = useState(false)
+  const [inWatchlist, setInWatchlist] = useState(false)
 
   if (!movie) return null
 
@@ -25,18 +32,77 @@ export default function MovieDetailClient({ movie, type }) {
   )
   const cast = movie.credits?.cast?.slice(0, 8) || []
   const similar = movie.similar?.results?.slice(0, 6) || []
-  const [showPlayer, setShowPlayer] = useState(false)
-  const embedUrl = type === 'tv'
-    ? `https://vidsrc.to/embed/tv/${movie.id}`
-    : `https://vidsrc.to/embed/movie/${movie.id}`
 
-  const imdbId = movie.imdb_id
-  const encodedTitle = encodeURIComponent(title)
-  const downloads = [
-    { label: '480p', size: '~400MB', url: `https://www.fzmovies.net/csearch.php?searchname=${encodedTitle}&searchby=moviename` },
-    { label: '720p', size: '~900MB', url: `https://o2tvmovies.com/?s=${encodedTitle}` },
-    { label: '1080p', size: '~2GB', url: `https://www.yify-torrent.org/search/?q=${encodedTitle}` },
-  ]
+  const seasons = type === 'tv'
+    ? (movie.seasons || []).filter((s) => s.season_number > 0)
+    : []
+
+  const embedUrl = type === 'tv' && selectedSeason && selectedEpisode
+    ? `https://vidsrc.to/embed/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
+    : type !== 'tv'
+    ? `https://vidsrc.to/embed/movie/${movie.id}`
+    : null
+
+  // Load watchlist state
+  useEffect(() => {
+    try {
+      const list = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
+      setInWatchlist(list.some((i) => i.id === movie.id))
+    } catch {}
+  }, [movie.id])
+
+  // Resume last watched season for TV shows
+  useEffect(() => {
+    if (type !== 'tv') return
+    try {
+      const history = JSON.parse(localStorage.getItem('cineflicker_continue') || '[]')
+      const entry = history.find((i) => i.id === movie.id)
+      if (entry?.season) setSelectedSeason(entry.season)
+    } catch {}
+  }, [movie.id, type])
+
+  // Fetch episodes when season changes
+  useEffect(() => {
+    if (type !== 'tv' || !selectedSeason) return
+    setLoadingEpisodes(true)
+    getSeasonDetails(movie.id, selectedSeason)
+      .then(({ data }) => setEpisodes(data.episodes || []))
+      .catch(() => setEpisodes([]))
+      .finally(() => setLoadingEpisodes(false))
+  }, [selectedSeason])
+
+  const handleSeasonSelect = (seasonNum) => {
+    setSelectedSeason(seasonNum)
+    setSelectedEpisode(null)
+    setShowPlayer(false)
+  }
+
+  const saveToHistory = (season = null, episode = null) => {
+    try {
+      const existing = JSON.parse(localStorage.getItem('cineflicker_continue') || '[]')
+      const filtered = existing.filter((i) => i.id !== movie.id)
+      const entry = { id: movie.id, title, type, poster: movie.poster_path, season, episode, watchedAt: Date.now() }
+      localStorage.setItem('cineflicker_continue', JSON.stringify([entry, ...filtered].slice(0, 20)))
+    } catch {}
+  }
+
+  const handleEpisodePlay = (episodeNum) => {
+    setSelectedEpisode(episodeNum)
+    setShowPlayer(true)
+    saveToHistory(selectedSeason, episodeNum)
+  }
+
+  const toggleWatchlist = () => {
+    try {
+      const list = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
+      const exists = list.some((i) => i.id === movie.id)
+      const updated = exists
+        ? list.filter((i) => i.id !== movie.id)
+        : [{ id: movie.id, title, type, poster: movie.poster_path, date }, ...list]
+      localStorage.setItem('cineflicker_watchlist', JSON.stringify(updated))
+      setInWatchlist(!exists)
+    } catch {}
+  }
 
   return (
     <main className="bg-flicker-black min-h-screen">
@@ -137,13 +203,27 @@ export default function MovieDetailClient({ movie, type }) {
                   ▶ Watch Trailer
                 </motion.a>
               )}
+              {type !== 'tv' && (
+                <motion.button
+                  onClick={() => { setShowPlayer(true); saveToHistory() }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 bg-white text-black font-semibold px-8 py-3.5 rounded-full text-sm hover:bg-white/90 transition-all duration-200"
+                >
+                  ▶ Watch Now
+                </motion.button>
+              )}
               <motion.button
-                onClick={() => setShowPlayer(true)}
+                onClick={toggleWatchlist}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-2 bg-white text-black font-semibold px-8 py-3.5 rounded-full text-sm hover:bg-white/90 transition-all duration-200"
+                className={`flex items-center gap-2 px-8 py-3.5 rounded-full text-sm font-medium border transition-all duration-200 ${
+                  inWatchlist
+                    ? 'bg-flicker-red border-flicker-red text-white'
+                    : 'bg-transparent border-flicker-border text-white hover:border-white/60'
+                }`}
               >
-                ▶ Watch Now
+                {inWatchlist ? '✓ In Watchlist' : '+ Watchlist'}
               </motion.button>
             </div>
 
@@ -156,28 +236,9 @@ export default function MovieDetailClient({ movie, type }) {
               </p>
             </div>
 
-            {downloads.length > 0 && (
-              <div className="flex flex-wrap gap-3 mb-10">
-                <span className="text-flicker-gray text-sm self-center">⬇ Download:</span>
-                {downloads.map(({ label, size, url }) => (
-                  <motion.a
-                    key={label}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="flex flex-col items-center text-xs px-4 py-2 rounded-full bg-flicker-card border border-flicker-border text-white hover:border-flicker-red hover:text-flicker-red transition-all duration-200"
-                  >
-                    <span className="font-semibold">{label}</span>
-                    <span className="text-flicker-gray text-[10px]">{size}</span>
-                  </motion.a>
-                ))}
-              </div>
-            )}
-
+            {/* Movie player */}
             <AnimatePresence>
-              {showPlayer && (
+              {showPlayer && type !== 'tv' && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -220,6 +281,108 @@ export default function MovieDetailClient({ movie, type }) {
             </div>
           </motion.div>
         </div>
+
+        {/* TV Seasons & Episodes */}
+        {type === 'tv' && seasons.length > 0 && (
+          <div className="mt-16">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1 h-6 bg-flicker-red rounded-full" />
+              <h2 className="text-white font-semibold text-xl">Episodes</h2>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-6">
+              {seasons.map((s) => (
+                <button
+                  key={s.season_number}
+                  onClick={() => handleSeasonSelect(s.season_number)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
+                    selectedSeason === s.season_number
+                      ? 'bg-flicker-red border-flicker-red text-white'
+                      : 'bg-flicker-card border-flicker-border text-flicker-gray hover:text-white hover:border-white/40'
+                  }`}
+                >
+                  Season {s.season_number}
+                </button>
+              ))}
+            </div>
+
+            {selectedSeason && (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={selectedSeason}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {loadingEpisodes ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {[...Array(6)].map((_, i) => (
+                        <div key={i} className="h-20 rounded-xl bg-flicker-card animate-pulse" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {episodes.map((ep) => (
+                        <motion.button
+                          key={ep.episode_number}
+                          onClick={() => handleEpisodePlay(ep.episode_number)}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-200 ${
+                            selectedEpisode === ep.episode_number
+                              ? 'border-flicker-red bg-flicker-red/10'
+                              : 'border-flicker-border bg-flicker-card hover:border-white/30'
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-flicker-red/20 flex items-center justify-center flex-shrink-0">
+                            <span className="text-flicker-red text-xs font-bold">E{ep.episode_number}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-xs font-medium truncate">{ep.name}</p>
+                            {ep.runtime && <p className="text-flicker-gray text-xs">{ep.runtime}m</p>}
+                          </div>
+                          <span className="text-flicker-gray text-xs">▶</span>
+                        </motion.button>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            )}
+
+            <AnimatePresence>
+              {showPlayer && selectedEpisode && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="mt-6 rounded-2xl overflow-hidden border border-flicker-border relative"
+                >
+                  <div className="flex items-center justify-between px-4 py-2 bg-flicker-card border-b border-flicker-border">
+                    <span className="text-white text-sm font-medium">
+                      S{selectedSeason} · E{selectedEpisode}
+                    </span>
+                    <button
+                      onClick={() => setShowPlayer(false)}
+                      className="bg-black/70 text-white text-xs px-3 py-1 rounded-full hover:bg-black transition"
+                    >
+                      ✕ Close
+                    </button>
+                  </div>
+                  <div className="aspect-video w-full">
+                    <iframe
+                      src={embedUrl}
+                      className="w-full h-full"
+                      allowFullScreen
+                      allow="autoplay; fullscreen"
+                      referrerPolicy="origin"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {cast.length > 0 && (
           <div className="mt-16">
