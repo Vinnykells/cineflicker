@@ -6,7 +6,7 @@ import MovieCard from './MovieCard'
 
 export default function MovieSection({ title, movies, type = 'movie' }) {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: '-100px' })
+  const isInView = useInView(ref, { once: true, margin: '0px' })
 
   if (!movies || movies.length === 0) return null
 

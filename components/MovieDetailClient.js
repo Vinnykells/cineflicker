@@ -1,6 +1,7 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { getImageUrl, getBackdropUrl } from '@/lib/tmdb'
 import MovieCard from './MovieCard'
@@ -24,6 +25,18 @@ export default function MovieDetailClient({ movie, type }) {
   )
   const cast = movie.credits?.cast?.slice(0, 8) || []
   const similar = movie.similar?.results?.slice(0, 6) || []
+  const [showPlayer, setShowPlayer] = useState(false)
+  const embedUrl = type === 'tv'
+    ? `https://vidsrc.to/embed/tv/${movie.id}`
+    : `https://vidsrc.to/embed/movie/${movie.id}`
+
+  const imdbId = movie.imdb_id
+  const encodedTitle = encodeURIComponent(title)
+  const downloads = [
+    { label: '480p', size: '~400MB', url: `https://www.fzmovies.net/csearch.php?searchname=${encodedTitle}&searchby=moviename` },
+    { label: '720p', size: '~900MB', url: `https://o2tvmovies.com/?s=${encodedTitle}` },
+    { label: '1080p', size: '~2GB', url: `https://www.yify-torrent.org/search/?q=${encodedTitle}` },
+  ]
 
   return (
     <main className="bg-flicker-black min-h-screen">
@@ -125,13 +138,70 @@ export default function MovieDetailClient({ movie, type }) {
                 </motion.a>
               )}
               <motion.button
+                onClick={() => setShowPlayer(true)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-2 bg-white/10 border border-white/20 text-white px-8 py-3.5 rounded-full text-sm hover:bg-white/20 transition-all duration-200"
+                className="flex items-center gap-2 bg-white text-black font-semibold px-8 py-3.5 rounded-full text-sm hover:bg-white/90 transition-all duration-200"
               >
-                + Watchlist
+                ▶ Watch Now
               </motion.button>
             </div>
+
+            <div className="flex items-start gap-2 mb-6 px-4 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+              <span className="text-yellow-400 text-sm">🛡️</span>
+              <p className="text-yellow-300/80 text-xs leading-relaxed">
+                For the best experience, use an ad blocker like{' '}
+                <a href="https://ublockorigin.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-300">uBlock Origin</a>{' '}
+                — blocks all popups so you can watch without interruptions.
+              </p>
+            </div>
+
+            {downloads.length > 0 && (
+              <div className="flex flex-wrap gap-3 mb-10">
+                <span className="text-flicker-gray text-sm self-center">⬇ Download:</span>
+                {downloads.map(({ label, size, url }) => (
+                  <motion.a
+                    key={label}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center text-xs px-4 py-2 rounded-full bg-flicker-card border border-flicker-border text-white hover:border-flicker-red hover:text-flicker-red transition-all duration-200"
+                  >
+                    <span className="font-semibold">{label}</span>
+                    <span className="text-flicker-gray text-[10px]">{size}</span>
+                  </motion.a>
+                ))}
+              </div>
+            )}
+
+            <AnimatePresence>
+              {showPlayer && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="mb-10 rounded-2xl overflow-hidden border border-flicker-border relative"
+                >
+                  <button
+                    onClick={() => setShowPlayer(false)}
+                    className="absolute top-3 right-3 z-10 bg-black/70 text-white text-xs px-3 py-1 rounded-full hover:bg-black transition"
+                  >
+                    ✕ Close
+                  </button>
+                  <div className="aspect-video w-full">
+                    <iframe
+                      src={embedUrl}
+                      className="w-full h-full"
+                      allowFullScreen
+                      allow="autoplay; fullscreen"
+                      referrerPolicy="origin"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6 p-6 rounded-2xl bg-flicker-card border border-flicker-border">
               {[
