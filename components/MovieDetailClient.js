@@ -257,8 +257,8 @@ export default function MovieDetailClient({ movie, type }) {
                       src={embedUrl}
                       className="w-full h-full"
                       allowFullScreen
-                      allow="autoplay; fullscreen"
-                      referrerPolicy="origin"
+                      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                      referrerPolicy="no-referrer"
                     />
                   </div>
                 </motion.div>
@@ -375,8 +375,8 @@ export default function MovieDetailClient({ movie, type }) {
                       src={embedUrl}
                       className="w-full h-full"
                       allowFullScreen
-                      allow="autoplay; fullscreen"
-                      referrerPolicy="origin"
+                      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                      referrerPolicy="no-referrer"
                     />
                   </div>
                 </motion.div>
