@@ -10,6 +10,11 @@ export default function MovieDetailClient({ movie, type }) {
   const router = useRouter()
 
   const [showPlayer, setShowPlayer] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
+  }, [])
   const [selectedSeason, setSelectedSeason] = useState(null)
   const [selectedEpisode, setSelectedEpisode] = useState(null)
   const [episodes, setEpisodes] = useState([])
@@ -88,9 +93,14 @@ export default function MovieDetailClient({ movie, type }) {
   }
 
   const handleEpisodePlay = (episodeNum) => {
-    setSelectedEpisode(episodeNum)
-    setShowPlayer(true)
     saveToHistory(selectedSeason, episodeNum)
+    if (isMobile) {
+      const url = `https://vidsrc.to/embed/tv/${movie.id}/${selectedSeason}/${episodeNum}`
+      window.open(url, '_blank')
+    } else {
+      setSelectedEpisode(episodeNum)
+      setShowPlayer(true)
+    }
   }
 
   const toggleWatchlist = () => {
@@ -206,7 +216,14 @@ export default function MovieDetailClient({ movie, type }) {
               )}
               {type !== 'tv' && (
                 <motion.button
-                  onClick={() => { setShowPlayer(true); saveToHistory() }}
+                  onClick={() => {
+                    if (isMobile) {
+                      window.open(embedUrl, '_blank')
+                    } else {
+                      setShowPlayer(true)
+                      saveToHistory()
+                    }
+                  }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-2 bg-white text-black font-semibold px-8 py-3.5 rounded-full text-sm hover:bg-white/90 transition-all duration-200"
