@@ -16,60 +16,61 @@ export default function MovieDetailClient({ movie, type }) {
   const [loadingEpisodes, setLoadingEpisodes] = useState(false)
   const [inWatchlist, setInWatchlist] = useState(false)
 
-  if (!movie) return null
-
-  const title = movie.title || movie.name
-  const date = movie.release_date || movie.first_air_date
+  const title = movie?.title || movie?.name
+  const date = movie?.release_date || movie?.first_air_date
   const year = date?.split('-')[0]
-  const rating = movie.vote_average?.toFixed(1)
-  const runtime = movie.runtime
+  const rating = movie?.vote_average?.toFixed(1)
+  const runtime = movie?.runtime
     ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m`
     : null
-  const posterUrl = getImageUrl(movie.poster_path, 'w500')
-  const backdropUrl = getBackdropUrl(movie.backdrop_path)
-  const trailer = movie.videos?.results?.find(
+  const posterUrl = getImageUrl(movie?.poster_path, 'w500')
+  const backdropUrl = getBackdropUrl(movie?.backdrop_path)
+  const trailer = movie?.videos?.results?.find(
     (v) => v.type === 'Trailer' && v.site === 'YouTube'
   )
-  const cast = movie.credits?.cast?.slice(0, 8) || []
-  const similar = movie.similar?.results?.slice(0, 6) || []
+  const cast = movie?.credits?.cast?.slice(0, 8) || []
+  const similar = movie?.similar?.results?.slice(0, 6) || []
 
   const seasons = type === 'tv'
-    ? (movie.seasons || []).filter((s) => s.season_number > 0)
+    ? (movie?.seasons || []).filter((s) => s.season_number > 0)
     : []
 
   const embedUrl = type === 'tv' && selectedSeason && selectedEpisode
-    ? `https://vidsrc.to/embed/tv/${movie.id}/${selectedSeason}/${selectedEpisode}`
+    ? `https://vidsrc.to/embed/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
     : type !== 'tv'
-    ? `https://vidsrc.to/embed/movie/${movie.id}`
+    ? `https://vidsrc.to/embed/movie/${movie?.id}`
     : null
 
   // Load watchlist state
   useEffect(() => {
+    if (!movie?.id) return
     try {
       const list = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
       setInWatchlist(list.some((i) => i.id === movie.id))
     } catch {}
-  }, [movie.id])
+  }, [movie?.id])
 
   // Resume last watched season for TV shows
   useEffect(() => {
-    if (type !== 'tv') return
+    if (type !== 'tv' || !movie?.id) return
     try {
       const history = JSON.parse(localStorage.getItem('cineflicker_continue') || '[]')
       const entry = history.find((i) => i.id === movie.id)
       if (entry?.season) setSelectedSeason(entry.season)
     } catch {}
-  }, [movie.id, type])
+  }, [movie?.id, type])
 
   // Fetch episodes when season changes
   useEffect(() => {
-    if (type !== 'tv' || !selectedSeason) return
+    if (type !== 'tv' || !selectedSeason || !movie?.id) return
     setLoadingEpisodes(true)
     getSeasonDetails(movie.id, selectedSeason)
       .then(({ data }) => setEpisodes(data.episodes || []))
       .catch(() => setEpisodes([]))
       .finally(() => setLoadingEpisodes(false))
-  }, [selectedSeason])
+  }, [selectedSeason, movie?.id, type])
+
+  if (!movie) return null
 
   const handleSeasonSelect = (seasonNum) => {
     setSelectedSeason(seasonNum)
@@ -81,7 +82,7 @@ export default function MovieDetailClient({ movie, type }) {
     try {
       const existing = JSON.parse(localStorage.getItem('cineflicker_continue') || '[]')
       const filtered = existing.filter((i) => i.id !== movie.id)
-      const entry = { id: movie.id, title, type, poster: movie.poster_path, season, episode, watchedAt: Date.now() }
+      const entry = { id: movie.id, title, type, poster: movie?.poster_path, season, episode, watchedAt: Date.now() }
       localStorage.setItem('cineflicker_continue', JSON.stringify([entry, ...filtered].slice(0, 20)))
     } catch {}
   }
@@ -98,7 +99,7 @@ export default function MovieDetailClient({ movie, type }) {
       const exists = list.some((i) => i.id === movie.id)
       const updated = exists
         ? list.filter((i) => i.id !== movie.id)
-        : [{ id: movie.id, title, type, poster: movie.poster_path, date }, ...list]
+        : [{ id: movie.id, title, type, poster: movie?.poster_path, date }, ...list]
       localStorage.setItem('cineflicker_watchlist', JSON.stringify(updated))
       setInWatchlist(!exists)
     } catch {}
