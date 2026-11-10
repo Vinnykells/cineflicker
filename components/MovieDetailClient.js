@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { getImageUrl, getBackdropUrl, getSeasonDetails } from '@/lib/tmdb'
@@ -72,7 +72,15 @@ export default function MovieDetailClient({ movie, type }) {
 
   if (!movie) return null
 
-  const handleSeasonSelect = (seasonNum) => {
+  const iframeRef = React.useRef(null)
+  const tvIframeRef = React.useRef(null)
+
+  const enterFullscreen = (ref) => {
+    const el = ref.current
+    if (!el) return
+    if (el.requestFullscreen) el.requestFullscreen()
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
+  }
     setSelectedSeason(seasonNum)
     setSelectedEpisode(null)
     setShowPlayer(false)
@@ -252,14 +260,20 @@ export default function MovieDetailClient({ movie, type }) {
                   >
                     ✕ Close
                   </button>
+                  <button
+                    onClick={() => enterFullscreen(iframeRef)}
+                    className="absolute top-3 right-20 z-10 bg-black/70 text-white text-xs px-3 py-1 rounded-full hover:bg-black transition"
+                  >
+                    ⛶ Fullscreen
+                  </button>
                   <div className="aspect-video w-full">
                     <iframe
+                      ref={iframeRef}
                       src={embedUrl}
                       className="w-full h-full"
                       allowFullScreen
                       allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                       referrerPolicy="no-referrer"
-                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
                     />
                   </div>
                 </motion.div>
@@ -364,21 +378,29 @@ export default function MovieDetailClient({ movie, type }) {
                     <span className="text-white text-sm font-medium">
                       S{selectedSeason} · E{selectedEpisode}
                     </span>
-                    <button
-                      onClick={() => setShowPlayer(false)}
-                      className="bg-black/70 text-white text-xs px-3 py-1 rounded-full hover:bg-black transition"
-                    >
-                      ✕ Close
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => enterFullscreen(tvIframeRef)}
+                        className="bg-black/70 text-white text-xs px-3 py-1 rounded-full hover:bg-black transition"
+                      >
+                        ⛶ Fullscreen
+                      </button>
+                      <button
+                        onClick={() => setShowPlayer(false)}
+                        className="bg-black/70 text-white text-xs px-3 py-1 rounded-full hover:bg-black transition"
+                      >
+                        ✕ Close
+                      </button>
+                    </div>
                   </div>
                   <div className="aspect-video w-full">
                     <iframe
+                      ref={tvIframeRef}
                       src={embedUrl}
                       className="w-full h-full"
                       allowFullScreen
                       allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                       referrerPolicy="no-referrer"
-                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
                     />
                   </div>
                 </motion.div>
