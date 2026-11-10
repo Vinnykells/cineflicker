@@ -35,8 +35,6 @@ export default function MovieDetailClient({ movie, type }) {
     ? (movie?.seasons || []).filter((s) => s.season_number > 0)
     : []
 
-  const getPlayerUrl = (src) => `/api/player?src=${encodeURIComponent(src)}`
-
   const embedUrl = type === 'tv' && selectedSeason && selectedEpisode
     ? `https://multiembed.mov/?video_id=${movie?.id}&tmdb=1&s=${selectedSeason}&e=${selectedEpisode}`
     : type !== 'tv'
@@ -246,7 +244,7 @@ export default function MovieDetailClient({ movie, type }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
-                  className="mb-10 rounded-2xl border border-flicker-border relative [&:fullscreen]:rounded-none"
+                  className="mb-10 rounded-2xl border border-flicker-border relative"
                 >
                   <button
                     onClick={() => setShowPlayer(false)}
@@ -261,6 +259,7 @@ export default function MovieDetailClient({ movie, type }) {
                       allowFullScreen
                       allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                       referrerPolicy="no-referrer"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
                     />
                   </div>
                 </motion.div>
@@ -359,7 +358,7 @@ export default function MovieDetailClient({ movie, type }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
-                  className="mt-6 rounded-2xl border border-flicker-border relative [&:fullscreen]:rounded-none"
+                  className="mt-6 rounded-2xl border border-flicker-border relative"
                 >
                   <div className="flex items-center justify-between px-4 py-2 bg-flicker-card border-b border-flicker-border">
                     <span className="text-white text-sm font-medium">
@@ -379,6 +378,7 @@ export default function MovieDetailClient({ movie, type }) {
                       allowFullScreen
                       allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                       referrerPolicy="no-referrer"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
                     />
                   </div>
                 </motion.div>
