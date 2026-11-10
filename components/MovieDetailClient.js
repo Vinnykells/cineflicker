@@ -44,9 +44,9 @@ export default function MovieDetailClient({ movie, type }) {
   const getPlayerUrl = (src) => `/api/player?src=${encodeURIComponent(src)}`
 
   const embedUrl = type === 'tv' && selectedSeason && selectedEpisode
-    ? `https://vidsrc.to/embed/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
+    ? `https://multiembed.mov/?video_id=${movie?.id}&tmdb=1&s=${selectedSeason}&e=${selectedEpisode}`
     : type !== 'tv'
-    ? `https://vidsrc.to/embed/movie/${movie?.id}`
+    ? `https://multiembed.mov/?video_id=${movie?.id}&tmdb=1`
     : null
 
   // Load watchlist state
@@ -98,7 +98,7 @@ export default function MovieDetailClient({ movie, type }) {
   const handleEpisodePlay = (episodeNum) => {
     saveToHistory(selectedSeason, episodeNum)
     if (isMobile) {
-      const src = `https://vidsrc.to/embed/tv/${movie.id}/${selectedSeason}/${episodeNum}`
+      const src = `https://multiembed.mov/?video_id=${movie.id}&tmdb=1&s=${selectedSeason}&e=${episodeNum}`
       window.open(getPlayerUrl(src), '_blank')
     } else {
       setSelectedEpisode(episodeNum)
@@ -222,7 +222,7 @@ export default function MovieDetailClient({ movie, type }) {
                 <motion.button
                   onClick={() => {
                     if (isMobile) {
-                      window.open(getPlayerUrl(`https://vidsrc.to/embed/movie/${movie?.id}`), '_blank')
+                      window.open(getPlayerUrl(`https://multiembed.mov/?video_id=${movie?.id}&tmdb=1`), '_blank')
                     } else {
                       setShowPlayer(true)
                       setOverlayVisible(true)
