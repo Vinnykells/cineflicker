@@ -35,13 +35,21 @@ export default function MovieDetailClient({ movie, type }) {
     ? (movie?.seasons || []).filter((s) => s.season_number > 0)
     : []
 
-  const getPlayerUrl = (src) => `/api/player?src=${encodeURIComponent(src)}`
+  const [activeServer, setActiveServer] = useState('vidlink')
 
-  const embedUrl = type === 'tv' && selectedSeason && selectedEpisode
-    ? `https://vidsrc.to/embed/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
-    : type !== 'tv'
-    ? `https://vidsrc.to/embed/movie/${movie?.id}`
-    : null
+  const servers = {
+    vidlink: type === 'tv' && selectedSeason && selectedEpisode
+      ? `https://vidlink.pro/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}?autoplay=false`
+      : `https://vidlink.pro/movie/${movie?.id}?autoplay=false`,
+    vidsrc: type === 'tv' && selectedSeason && selectedEpisode
+      ? `https://vidsrc.to/embed/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
+      : `https://vidsrc.to/embed/movie/${movie?.id}`,
+    multiembed: type === 'tv' && selectedSeason && selectedEpisode
+      ? `https://multiembed.mov/?video_id=${movie?.id}&tmdb=1&s=${selectedSeason}&e=${selectedEpisode}`
+      : `https://multiembed.mov/?video_id=${movie?.id}&tmdb=1`,
+  }
+
+  const embedUrl = servers[activeServer]
 
   // Load watchlist state
   useEffect(() => {
@@ -246,23 +254,36 @@ export default function MovieDetailClient({ movie, type }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
-                  className="mb-10 rounded-2xl border border-flicker-border relative [&:fullscreen]:rounded-none"
+                  className="mb-10 rounded-2xl border border-flicker-border overflow-hidden"
                 >
-                  <button
-                    onClick={() => setShowPlayer(false)}
-                    className="absolute top-3 right-3 z-10 bg-black/70 text-white text-xs px-3 py-1 rounded-full hover:bg-black transition"
-                  >
-                    ✕ Close
-                  </button>
+                  <div className="flex items-center justify-between px-4 py-2 bg-flicker-card border-b border-flicker-border">
+                    <div className="flex items-center gap-2">
+                      <span className="text-flicker-gray text-xs">Server:</span>
+                      {[['vidlink', 'VidLink'], ['vidsrc', 'VidSrc'], ['multiembed', 'MultiEmbed']].map(([key, label]) => (
+                        <button
+                          key={key}
+                          onClick={() => setActiveServer(key)}
+                          className={`px-3 py-1 text-xs rounded-full font-medium transition ${
+                            activeServer === key ? 'bg-flicker-red text-white' : 'bg-flicker-dark text-flicker-gray hover:text-white'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={() => setShowPlayer(false)} className="text-flicker-gray text-xs hover:text-white transition">✕ Close</button>
+                  </div>
                   <div className="aspect-video w-full" style={{ touchAction: 'none' }}>
                     <iframe
+                      key={`${activeServer}-${movie?.id}`}
                       src={embedUrl}
-                      className="w-full h-full"
+                      className="w-full h-full border-0"
                       allowFullScreen
                       allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
                       webkit-playsinline="true"
                       playsInline
                       referrerPolicy="no-referrer"
+                      scrolling="no"
                     />
                   </div>
                 </motion.div>
@@ -361,28 +382,39 @@ export default function MovieDetailClient({ movie, type }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
-                  className="mt-6 rounded-2xl border border-flicker-border relative [&:fullscreen]:rounded-none"
+                  className="mt-6 rounded-2xl border border-flicker-border overflow-hidden"
                 >
                   <div className="flex items-center justify-between px-4 py-2 bg-flicker-card border-b border-flicker-border">
-                    <span className="text-white text-sm font-medium">
-                      S{selectedSeason} · E{selectedEpisode}
-                    </span>
-                    <button
-                      onClick={() => setShowPlayer(false)}
-                      className="bg-black/70 text-white text-xs px-3 py-1 rounded-full hover:bg-black transition"
-                    >
-                      ✕ Close
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <span className="text-white text-sm font-medium">S{selectedSeason} · E{selectedEpisode}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-flicker-gray text-xs">Server:</span>
+                        {[['vidlink', 'VidLink'], ['vidsrc', 'VidSrc'], ['multiembed', 'MultiEmbed']].map(([key, label]) => (
+                          <button
+                            key={key}
+                            onClick={() => setActiveServer(key)}
+                            className={`px-3 py-1 text-xs rounded-full font-medium transition ${
+                              activeServer === key ? 'bg-flicker-red text-white' : 'bg-flicker-dark text-flicker-gray hover:text-white'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <button onClick={() => setShowPlayer(false)} className="text-flicker-gray text-xs hover:text-white transition">✕ Close</button>
                   </div>
                   <div className="aspect-video w-full" style={{ touchAction: 'none' }}>
                     <iframe
+                      key={`${activeServer}-${movie?.id}-${selectedSeason}-${selectedEpisode}`}
                       src={embedUrl}
-                      className="w-full h-full"
+                      className="w-full h-full border-0"
                       allowFullScreen
                       allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
                       webkit-playsinline="true"
                       playsInline
                       referrerPolicy="no-referrer"
+                      scrolling="no"
                     />
                   </div>
                 </motion.div>
