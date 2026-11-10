@@ -37,9 +37,9 @@ export default function MovieDetailClient({ movie, type }) {
     : []
 
   const embedUrl = type === 'tv' && selectedSeason && selectedEpisode
-    ? `https://vidsrc.to/embed/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
+    ? `https://vidsrc.me/embed/tv?tmdb=${movie?.id}&season=${selectedSeason}&episode=${selectedEpisode}`
     : type !== 'tv'
-    ? `https://vidsrc.to/embed/movie/${movie?.id}`
+    ? `https://vidsrc.me/embed/movie?tmdb=${movie?.id}`
     : null
 
   // Load watchlist state
