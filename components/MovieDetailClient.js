@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { getImageUrl, getBackdropUrl, getSeasonDetails } from '@/lib/tmdb'
@@ -34,6 +34,8 @@ export default function MovieDetailClient({ movie, type }) {
   const seasons = type === 'tv'
     ? (movie?.seasons || []).filter((s) => s.season_number > 0)
     : []
+
+  const getPlayerUrl = (src) => `/api/player?src=${encodeURIComponent(src)}`
 
   const embedUrl = type === 'tv' && selectedSeason && selectedEpisode
     ? `https://multiembed.mov/?video_id=${movie?.id}&tmdb=1&s=${selectedSeason}&e=${selectedEpisode}`
@@ -72,15 +74,7 @@ export default function MovieDetailClient({ movie, type }) {
 
   if (!movie) return null
 
-  const iframeRef = React.useRef(null)
-  const tvIframeRef = React.useRef(null)
-
-  const enterFullscreen = (ref) => {
-    const el = ref.current
-    if (!el) return
-    if (el.requestFullscreen) el.requestFullscreen()
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
-  }
+  const handleSeasonSelect = (seasonNum) => {
     setSelectedSeason(seasonNum)
     setSelectedEpisode(null)
     setShowPlayer(false)
@@ -252,7 +246,7 @@ export default function MovieDetailClient({ movie, type }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
-                  className="mb-10 rounded-2xl border border-flicker-border relative"
+                  className="mb-10 rounded-2xl border border-flicker-border relative [&:fullscreen]:rounded-none"
                 >
                   <button
                     onClick={() => setShowPlayer(false)}
@@ -260,15 +254,8 @@ export default function MovieDetailClient({ movie, type }) {
                   >
                     ✕ Close
                   </button>
-                  <button
-                    onClick={() => enterFullscreen(iframeRef)}
-                    className="absolute top-3 right-20 z-10 bg-black/70 text-white text-xs px-3 py-1 rounded-full hover:bg-black transition"
-                  >
-                    ⛶ Fullscreen
-                  </button>
                   <div className="aspect-video w-full">
                     <iframe
-                      ref={iframeRef}
                       src={embedUrl}
                       className="w-full h-full"
                       allowFullScreen
@@ -372,30 +359,21 @@ export default function MovieDetailClient({ movie, type }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
-                  className="mt-6 rounded-2xl border border-flicker-border relative"
+                  className="mt-6 rounded-2xl border border-flicker-border relative [&:fullscreen]:rounded-none"
                 >
                   <div className="flex items-center justify-between px-4 py-2 bg-flicker-card border-b border-flicker-border">
                     <span className="text-white text-sm font-medium">
                       S{selectedSeason} · E{selectedEpisode}
                     </span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => enterFullscreen(tvIframeRef)}
-                        className="bg-black/70 text-white text-xs px-3 py-1 rounded-full hover:bg-black transition"
-                      >
-                        ⛶ Fullscreen
-                      </button>
-                      <button
-                        onClick={() => setShowPlayer(false)}
-                        className="bg-black/70 text-white text-xs px-3 py-1 rounded-full hover:bg-black transition"
-                      >
-                        ✕ Close
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => setShowPlayer(false)}
+                      className="bg-black/70 text-white text-xs px-3 py-1 rounded-full hover:bg-black transition"
+                    >
+                      ✕ Close
+                    </button>
                   </div>
                   <div className="aspect-video w-full">
                     <iframe
-                      ref={tvIframeRef}
                       src={embedUrl}
                       className="w-full h-full"
                       allowFullScreen
