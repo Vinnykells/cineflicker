@@ -11,6 +11,11 @@ export default function MovieDetailClient({ movie, type }) {
 
   const [showPlayer, setShowPlayer] = useState(false)
   const [overlayVisible, setOverlayVisible] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
+  }, [])
   const [selectedSeason, setSelectedSeason] = useState(null)
   const [selectedEpisode, setSelectedEpisode] = useState(null)
   const [episodes, setEpisodes] = useState([])
@@ -36,10 +41,12 @@ export default function MovieDetailClient({ movie, type }) {
     ? (movie?.seasons || []).filter((s) => s.season_number > 0)
     : []
 
+  const getPlayerUrl = (src) => `/api/player?src=${encodeURIComponent(src)}`
+
   const embedUrl = type === 'tv' && selectedSeason && selectedEpisode
-    ? `https://vidsrc.me/embed/tv?tmdb=${movie?.id}&season=${selectedSeason}&episode=${selectedEpisode}`
+    ? `https://vidsrc.to/embed/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
     : type !== 'tv'
-    ? `https://vidsrc.me/embed/movie?tmdb=${movie?.id}`
+    ? `https://vidsrc.to/embed/movie/${movie?.id}`
     : null
 
   // Load watchlist state
@@ -89,10 +96,15 @@ export default function MovieDetailClient({ movie, type }) {
   }
 
   const handleEpisodePlay = (episodeNum) => {
-    setSelectedEpisode(episodeNum)
-    setShowPlayer(true)
-    setOverlayVisible(true)
     saveToHistory(selectedSeason, episodeNum)
+    if (isMobile) {
+      const src = `https://vidsrc.to/embed/tv/${movie.id}/${selectedSeason}/${episodeNum}`
+      window.open(getPlayerUrl(src), '_blank')
+    } else {
+      setSelectedEpisode(episodeNum)
+      setShowPlayer(true)
+      setOverlayVisible(true)
+    }
   }
 
   const toggleWatchlist = () => {
@@ -208,7 +220,15 @@ export default function MovieDetailClient({ movie, type }) {
               )}
               {type !== 'tv' && (
                 <motion.button
-                  onClick={() => { setShowPlayer(true); setOverlayVisible(true); saveToHistory() }}
+                  onClick={() => {
+                    if (isMobile) {
+                      window.open(getPlayerUrl(`https://vidsrc.to/embed/movie/${movie?.id}`), '_blank')
+                    } else {
+                      setShowPlayer(true)
+                      setOverlayVisible(true)
+                      saveToHistory()
+                    }
+                  }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-2 bg-white text-black font-semibold px-8 py-3.5 rounded-full text-sm hover:bg-white/90 transition-all duration-200"
