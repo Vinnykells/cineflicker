@@ -10,6 +10,7 @@ export default function MovieDetailClient({ movie, type }) {
   const router = useRouter()
 
   const [showPlayer, setShowPlayer] = useState(false)
+  const [overlayVisible, setOverlayVisible] = useState(true)
   const [selectedSeason, setSelectedSeason] = useState(null)
   const [selectedEpisode, setSelectedEpisode] = useState(null)
   const [episodes, setEpisodes] = useState([])
@@ -90,6 +91,7 @@ export default function MovieDetailClient({ movie, type }) {
   const handleEpisodePlay = (episodeNum) => {
     setSelectedEpisode(episodeNum)
     setShowPlayer(true)
+    setOverlayVisible(true)
     saveToHistory(selectedSeason, episodeNum)
   }
 
@@ -206,7 +208,7 @@ export default function MovieDetailClient({ movie, type }) {
               )}
               {type !== 'tv' && (
                 <motion.button
-                  onClick={() => { setShowPlayer(true); saveToHistory() }}
+                  onClick={() => { setShowPlayer(true); setOverlayVisible(true); saveToHistory() }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-2 bg-white text-black font-semibold px-8 py-3.5 rounded-full text-sm hover:bg-white/90 transition-all duration-200"
@@ -252,7 +254,7 @@ export default function MovieDetailClient({ movie, type }) {
                   >
                     ✕ Close
                   </button>
-                  <div className="aspect-video w-full">
+                  <div className="aspect-video w-full relative">
                     <iframe
                       src={embedUrl}
                       className="w-full h-full"
@@ -260,6 +262,16 @@ export default function MovieDetailClient({ movie, type }) {
                       allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                       referrerPolicy="no-referrer"
                     />
+                    {overlayVisible && (
+                      <div
+                        className="absolute inset-0 flex items-center justify-center bg-black/60 cursor-pointer md:hidden"
+                        onClick={() => setOverlayVisible(false)}
+                      >
+                        <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur border border-white/40 flex items-center justify-center">
+                          <span className="text-white text-2xl ml-1">▶</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -370,7 +382,7 @@ export default function MovieDetailClient({ movie, type }) {
                       ✕ Close
                     </button>
                   </div>
-                  <div className="aspect-video w-full">
+                  <div className="aspect-video w-full relative">
                     <iframe
                       src={embedUrl}
                       className="w-full h-full"
@@ -378,6 +390,16 @@ export default function MovieDetailClient({ movie, type }) {
                       allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                       referrerPolicy="no-referrer"
                     />
+                    {overlayVisible && (
+                      <div
+                        className="absolute inset-0 flex items-center justify-center bg-black/60 cursor-pointer md:hidden"
+                        onClick={() => setOverlayVisible(false)}
+                      >
+                        <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur border border-white/40 flex items-center justify-center">
+                          <span className="text-white text-2xl ml-1">▶</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
