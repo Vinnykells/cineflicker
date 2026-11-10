@@ -38,9 +38,9 @@ export default function MovieDetailClient({ movie, type }) {
   const getPlayerUrl = (src) => `/api/player?src=${encodeURIComponent(src)}`
 
   const embedUrl = type === 'tv' && selectedSeason && selectedEpisode
-    ? `https://multiembed.mov/?video_id=${movie?.id}&tmdb=1&s=${selectedSeason}&e=${selectedEpisode}`
+    ? `https://vidsrc.to/embed/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}`
     : type !== 'tv'
-    ? `https://multiembed.mov/?video_id=${movie?.id}&tmdb=1`
+    ? `https://vidsrc.to/embed/movie/${movie?.id}`
     : null
 
   // Load watchlist state
@@ -254,12 +254,14 @@ export default function MovieDetailClient({ movie, type }) {
                   >
                     ✕ Close
                   </button>
-                  <div className="aspect-video w-full">
+                  <div className="aspect-video w-full" style={{ touchAction: 'none' }}>
                     <iframe
                       src={embedUrl}
                       className="w-full h-full"
                       allowFullScreen
-                      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                      allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
+                      webkit-playsinline="true"
+                      playsInline
                       referrerPolicy="no-referrer"
                     />
                   </div>
@@ -372,12 +374,14 @@ export default function MovieDetailClient({ movie, type }) {
                       ✕ Close
                     </button>
                   </div>
-                  <div className="aspect-video w-full">
+                  <div className="aspect-video w-full" style={{ touchAction: 'none' }}>
                     <iframe
                       src={embedUrl}
                       className="w-full h-full"
                       allowFullScreen
-                      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                      allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
+                      webkit-playsinline="true"
+                      playsInline
                       referrerPolicy="no-referrer"
                     />
                   </div>
