@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { getImageUrl, getBackdropUrl, getSeasonDetails } from '@/lib/tmdb'
@@ -36,6 +36,7 @@ export default function MovieDetailClient({ movie, type }) {
     : []
 
   const [activeServer, setActiveServer] = useState('vidlink')
+  const playerRef = useRef(null)
 
   useEffect(() => {
     if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
@@ -107,6 +108,7 @@ export default function MovieDetailClient({ movie, type }) {
     setSelectedEpisode(episodeNum)
     setShowPlayer(true)
     saveToHistory(selectedSeason, episodeNum)
+    setTimeout(() => playerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
   }
 
   const toggleWatchlist = () => {
@@ -222,7 +224,7 @@ export default function MovieDetailClient({ movie, type }) {
               )}
               {type !== 'tv' && (
                 <motion.button
-                  onClick={() => { setShowPlayer(true); saveToHistory() }}
+                  onClick={() => { setShowPlayer(true); saveToHistory(); setTimeout(() => playerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100) }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-2 bg-white text-black font-semibold px-8 py-3.5 rounded-full text-sm hover:bg-white/90 transition-all duration-200"
@@ -255,7 +257,7 @@ export default function MovieDetailClient({ movie, type }) {
 
             {/* Movie player */}
             {type !== 'tv' && (
-              <div className={`mb-10 rounded-2xl border border-flicker-border overflow-hidden transition-all duration-300 ${showPlayer ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden border-0'}`}>
+              <div ref={playerRef} className={`mb-10 rounded-2xl border border-flicker-border overflow-hidden transition-all duration-300 ${showPlayer ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden border-0'}`}>
                 <div className="flex items-center justify-between px-4 py-2 bg-flicker-card border-b border-flicker-border">
                   <div className="flex items-center gap-2">
                     <span className="text-flicker-gray text-xs">Server:</span>
@@ -273,7 +275,7 @@ export default function MovieDetailClient({ movie, type }) {
                   </div>
                   <button onClick={() => setShowPlayer(false)} className="text-flicker-gray text-xs hover:text-white transition">✕ Close</button>
                 </div>
-                <div className="aspect-video w-full" style={{ touchAction: 'none' }}>
+                <div className="aspect-video w-full">
                   <iframe
                     key={`${activeServer}-${movie?.id}`}
                     src={showPlayer ? embedUrl : undefined}
@@ -376,7 +378,7 @@ export default function MovieDetailClient({ movie, type }) {
             )}
 
             {selectedEpisode && (
-              <div className={`mt-6 rounded-2xl border border-flicker-border overflow-hidden transition-all duration-300 ${showPlayer ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden border-0'}`}>
+              <div ref={playerRef} className={`mt-6 rounded-2xl border border-flicker-border overflow-hidden transition-all duration-300 ${showPlayer ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden border-0'}`}>
                 <div className="flex items-center justify-between px-4 py-2 bg-flicker-card border-b border-flicker-border">
                   <div className="flex items-center gap-3">
                     <span className="text-white text-sm font-medium">S{selectedSeason} · E{selectedEpisode}</span>
@@ -397,7 +399,7 @@ export default function MovieDetailClient({ movie, type }) {
                   </div>
                   <button onClick={() => setShowPlayer(false)} className="text-flicker-gray text-xs hover:text-white transition">✕ Close</button>
                 </div>
-                <div className="aspect-video w-full" style={{ touchAction: 'none' }}>
+                <div className="aspect-video w-full">
                   <iframe
                     key={`${activeServer}-${movie?.id}-${selectedSeason}-${selectedEpisode}`}
                     src={showPlayer ? embedUrl : undefined}
