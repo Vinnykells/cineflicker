@@ -37,6 +37,12 @@ export default function MovieDetailClient({ movie, type }) {
 
   const [activeServer, setActiveServer] = useState('vidlink')
 
+  useEffect(() => {
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      setActiveServer('multiembed')
+    }
+  }, [])
+
   const servers = {
     vidlink: type === 'tv' && selectedSeason && selectedEpisode
       ? `https://vidlink.pro/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}?autoplay=false`

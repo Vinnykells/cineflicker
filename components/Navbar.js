@@ -8,6 +8,7 @@ import { searchMulti, getImageUrl } from '@/lib/tmdb'
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const router = useRouter()
@@ -52,7 +53,7 @@ export default function Navbar() {
   const closeSearch = () => { setSearchOpen(false); setQuery(''); setSuggestions([]) }
 
   useEffect(() => {
-    const handleKeyDown = (e) => { if (e.key === 'Escape') closeSearch() }
+    const handleKeyDown = (e) => { if (e.key === 'Escape') { closeSearch(); setMenuOpen(false) } }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
@@ -79,6 +80,7 @@ export default function Navbar() {
             <span className="text-white font-bold text-2xl tracking-tight">flicker</span>
           </motion.button>
 
+          {/* Desktop links */}
           <div className="hidden md:flex items-center gap-6">
             {[
               { label: 'Movies', href: '/movies' },
@@ -97,15 +99,59 @@ export default function Navbar() {
             ))}
           </div>
 
-          <motion.button
-            onClick={() => setSearchOpen(!searchOpen)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all duration-200"
-          >
-            🔍
-          </motion.button>
+          <div className="flex items-center gap-3">
+            <motion.button
+              onClick={() => setSearchOpen(!searchOpen)}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all duration-200"
+            >
+              🔍
+            </motion.button>
+
+            {/* Hamburger — mobile only */}
+            <motion.button
+              onClick={() => setMenuOpen(!menuOpen)}
+              whileTap={{ scale: 0.9 }}
+              className="md:hidden w-10 h-10 rounded-full bg-white/10 border border-white/20 flex flex-col items-center justify-center gap-1.5 hover:bg-white/20 transition-all duration-200"
+            >
+              <motion.span animate={menuOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }} className="w-4 h-0.5 bg-white rounded-full block" />
+              <motion.span animate={menuOpen ? { opacity: 0 } : { opacity: 1 }} className="w-4 h-0.5 bg-white rounded-full block" />
+              <motion.span animate={menuOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }} className="w-4 h-0.5 bg-white rounded-full block" />
+            </motion.button>
+          </div>
         </div>
+
+        {/* Mobile menu */}
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden border-t border-flicker-border bg-flicker-black/95 backdrop-blur-xl overflow-hidden"
+            >
+              <div className="px-6 py-4 flex flex-col gap-1">
+                {[
+                  { label: 'Movies', href: '/movies' },
+                  { label: 'TV Shows', href: '/shows' },
+                  { label: 'Top Rated', href: '/top-rated' },
+                  { label: 'Genres', href: '/genres' },
+                  { label: 'Watchlist', href: '/watchlist' },
+                ].map((link) => (
+                  <motion.button
+                    key={link.label}
+                    onClick={() => { router.push(link.href); setMenuOpen(false) }}
+                    whileTap={{ scale: 0.98 }}
+                    className="text-flicker-gray hover:text-white py-3 text-sm font-medium border-b border-flicker-border/50 last:border-0 transition-colors duration-200 text-left"
+                  >
+                    {link.label}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
 
       <AnimatePresence>
