@@ -7,7 +7,9 @@ import { searchMulti } from '@/lib/tmdb'
 import MovieCard from '@/components/MovieCard'
 import SkeletonCard from '@/components/SkeletonCard'
 import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'() {
+import Footer from '@/components/Footer'
+
+const SearchResults = () => {
   const searchParams = useSearchParams()
   const query = searchParams.get('q')
   const [results, setResults] = useState([])
