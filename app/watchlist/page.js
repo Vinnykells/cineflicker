@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { getImageUrl } from '@/lib/tmdb'
 import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
 
 export default function WatchlistPage() {
   const [items, setItems] = useState([])
@@ -91,6 +92,7 @@ export default function WatchlistPage() {
           </div>
         )}
       </div>
+      <Footer />
     </main>
   )
 }

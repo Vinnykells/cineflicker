@@ -7,8 +7,7 @@ import { searchMulti } from '@/lib/tmdb'
 import MovieCard from '@/components/MovieCard'
 import SkeletonCard from '@/components/SkeletonCard'
 import Navbar from '@/components/Navbar'
-
-function SearchResults() {
+import Footer from '@/components/Footer'() {
   const searchParams = useSearchParams()
   const query = searchParams.get('q')
   const [results, setResults] = useState([])
@@ -79,6 +78,7 @@ export default function SearchPage() {
       <Suspense fallback={<div className="pt-32 px-6 text-flicker-gray">Loading...</div>}>
         <SearchResults />
       </Suspense>
+      <Footer />
     </main>
   )
 }
