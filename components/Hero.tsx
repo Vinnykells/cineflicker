@@ -4,13 +4,19 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { getBackdropUrl } from '@/lib/tmdb'
+import type { TmdbMediaItem } from '@/types/tmdb'
 
-export default function Hero({ movies }) {
+interface HeroProps {
+  movies?: TmdbMediaItem[]
+}
+
+export default function Hero({ movies }: HeroProps) {
   const [current, setCurrent] = useState(0)
   const router = useRouter()
   const featured = movies?.slice(0, 5) || []
 
   useEffect(() => {
+    if (featured.length === 0) return
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % featured.length)
     }, 6000)
@@ -36,7 +42,7 @@ export default function Hero({ movies }) {
           className="absolute inset-0"
         >
           {backdropUrl ? (
-            <img src={backdropUrl} alt={movie.title} className="w-full h-full object-cover" />
+            <img src={backdropUrl} alt={movie.title || movie.name || 'Featured'} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-flicker-dark" />
           )}

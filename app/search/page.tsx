@@ -8,11 +8,12 @@ import MovieCard from '@/components/MovieCard'
 import SkeletonCard from '@/components/SkeletonCard'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import type { TmdbMediaItem } from '@/types/tmdb'
 
 const SearchResults = () => {
   const searchParams = useSearchParams()
   const query = searchParams.get('q')
-  const [results, setResults] = useState([])
+  const [results, setResults] = useState<TmdbMediaItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

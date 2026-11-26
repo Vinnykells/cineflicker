@@ -3,9 +3,16 @@
 import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 import MovieCard from './MovieCard'
+import type { MediaType, TmdbMediaItem } from '@/types/tmdb'
 
-export default function MovieSection({ title, movies, type = 'movie' }) {
-  const ref = useRef(null)
+interface MovieSectionProps {
+  title: string
+  movies?: TmdbMediaItem[]
+  type?: MediaType
+}
+
+export default function MovieSection({ title, movies, type = 'movie' }: MovieSectionProps) {
+  const ref = useRef<HTMLElement>(null)
   const isInView = useInView(ref, { once: true, margin: '0px' })
 
   if (!movies || movies.length === 0) return null

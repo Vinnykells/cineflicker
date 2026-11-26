@@ -3,7 +3,12 @@
 import Link from 'next/link'
 import { useState } from 'react'
 
-function CopyButton({ value, label }) {
+interface CopyButtonProps {
+  value: string
+  label: string
+}
+
+function CopyButton({ value, label }: CopyButtonProps) {
   const [copied, setCopied] = useState(false)
   const copy = () => {
     navigator.clipboard.writeText(value)

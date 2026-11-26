@@ -1,18 +1,27 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { searchMulti, getImageUrl } from '@/lib/tmdb'
+import type { TmdbMediaItem } from '@/types/tmdb'
+
+const NAV_LINKS = [
+  { label: 'Movies', href: '/movies' },
+  { label: 'TV Shows', href: '/shows' },
+  { label: 'Top Rated', href: '/top-rated' },
+  { label: 'Genres', href: '/genres' },
+  { label: 'Watchlist', href: '/watchlist' },
+]
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [suggestions, setSuggestions] = useState([])
+  const [suggestions, setSuggestions] = useState<TmdbMediaItem[]>([])
   const router = useRouter()
-  const debounceRef = useRef(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -21,18 +30,25 @@ export default function Navbar() {
   }, [])
 
   useEffect(() => {
-    if (!query.trim()) { setSuggestions([]); return }
-    clearTimeout(debounceRef.current)
+    if (!query.trim()) {
+      setSuggestions([])
+      return
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(async () => {
       try {
         const { data } = await searchMulti(query)
         setSuggestions(data.results.filter((r) => r.media_type !== 'person').slice(0, 6))
-      } catch { setSuggestions([]) }
+      } catch {
+        setSuggestions([])
+      }
     }, 300)
-    return () => clearTimeout(debounceRef.current)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
   }, [query])
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (query.trim()) {
       router.push(`/search?q=${encodeURIComponent(query.trim())}`)
@@ -42,7 +58,7 @@ export default function Navbar() {
     }
   }
 
-  const handleSuggestionClick = (item) => {
+  const handleSuggestionClick = (item: TmdbMediaItem) => {
     const type = item.media_type === 'tv' ? 'tv' : 'movie'
     router.push(`/${type}/${item.id}`)
     setSearchOpen(false)
@@ -50,10 +66,19 @@ export default function Navbar() {
     setSuggestions([])
   }
 
-  const closeSearch = () => { setSearchOpen(false); setQuery(''); setSuggestions([]) }
+  const closeSearch = () => {
+    setSearchOpen(false)
+    setQuery('')
+    setSuggestions([])
+  }
 
   useEffect(() => {
-    const handleKeyDown = (e) => { if (e.key === 'Escape') { closeSearch(); setMenuOpen(false) } }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeSearch()
+        setMenuOpen(false)
+      }
+    }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
@@ -82,13 +107,7 @@ export default function Navbar() {
 
           {/* Desktop links */}
           <div className="hidden md:flex items-center gap-6">
-            {[
-              { label: 'Movies', href: '/movies' },
-              { label: 'TV Shows', href: '/shows' },
-              { label: 'Top Rated', href: '/top-rated' },
-              { label: 'Genres', href: '/genres' },
-              { label: 'Watchlist', href: '/watchlist' },
-            ].map((link) => (
+            {NAV_LINKS.map((link) => (
               <button
                 key={link.label}
                 onClick={() => router.push(link.href)}
@@ -132,13 +151,7 @@ export default function Navbar() {
               className="md:hidden border-t border-flicker-border bg-flicker-black/95 backdrop-blur-xl overflow-hidden"
             >
               <div className="px-6 py-4 flex flex-col gap-1">
-                {[
-                  { label: 'Movies', href: '/movies' },
-                  { label: 'TV Shows', href: '/shows' },
-                  { label: 'Top Rated', href: '/top-rated' },
-                  { label: 'Genres', href: '/genres' },
-                  { label: 'Watchlist', href: '/watchlist' },
-                ].map((link) => (
+                {NAV_LINKS.map((link) => (
                   <motion.button
                     key={link.label}
                     onClick={() => { router.push(link.href); setMenuOpen(false) }}
@@ -195,7 +208,7 @@ export default function Navbar() {
                   className="mt-2 bg-flicker-card border border-flicker-border rounded-2xl overflow-hidden"
                 >
                   {suggestions.map((item) => {
-                    const title = item.title || item.name
+                    const title = item.title || item.name || 'Untitled'
                     const year = (item.release_date || item.first_air_date)?.split('-')[0]
                     const poster = getImageUrl(item.poster_path, 'w92')
                     return (

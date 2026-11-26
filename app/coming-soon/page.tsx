@@ -1,13 +1,14 @@
+import type { Metadata } from 'next'
 import { getUpcoming } from '@/lib/tmdb'
 import MovieCard from '@/components/MovieCard'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import Link from 'next/link'
+import type { TmdbMediaItem } from '@/types/tmdb'
 
-export const metadata = { title: 'Coming Soon | Cineflicker' }
+export const metadata: Metadata = { title: 'Coming Soon | Cineflicker' }
 
 export default async function ComingSoonPage() {
-  let movies = []
+  let movies: TmdbMediaItem[] = []
   try {
     const { data } = await getUpcoming()
     movies = data.results || []

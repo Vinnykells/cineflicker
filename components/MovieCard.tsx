@@ -1,16 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type MouseEvent } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { getImageUrl } from '@/lib/tmdb'
+import type { MediaType, TmdbMediaItem, WatchlistItem } from '@/types/tmdb'
 
-export default function MovieCard({ movie, type = 'movie' }) {
+interface MovieCardProps {
+  movie: TmdbMediaItem
+  type?: MediaType
+}
+
+export default function MovieCard({ movie, type = 'movie' }: MovieCardProps) {
   const router = useRouter()
   const [imageError, setImageError] = useState(false)
   const [inWatchlist, setInWatchlist] = useState(false)
 
-  const title = movie.title || movie.name
+  const title = movie.title || movie.name || 'Untitled'
   const date = movie.release_date || movie.first_air_date
   const year = date?.split('-')[0]
   const rating = movie.vote_average?.toFixed(1)
@@ -18,17 +24,17 @@ export default function MovieCard({ movie, type = 'movie' }) {
 
   useEffect(() => {
     try {
-      const list = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
+      const list: WatchlistItem[] = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
       setInWatchlist(list.some((i) => i.id === movie.id))
     } catch {}
   }, [movie.id])
 
-  const toggleWatchlist = (e) => {
+  const toggleWatchlist = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
     try {
-      const list = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
+      const list: WatchlistItem[] = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
       const exists = list.some((i) => i.id === movie.id)
-      const updated = exists
+      const updated: WatchlistItem[] = exists
         ? list.filter((i) => i.id !== movie.id)
         : [{ id: movie.id, title, type, poster: movie.poster_path, date }, ...list]
       localStorage.setItem('cineflicker_watchlist', JSON.stringify(updated))

@@ -5,18 +5,38 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { getImageUrl, getBackdropUrl, getSeasonDetails } from '@/lib/tmdb'
 import MovieCard from './MovieCard'
+import type {
+  ContinueWatchingItem,
+  MediaType,
+  TmdbEpisode,
+  TmdbMediaDetails,
+  WatchlistItem,
+} from '@/types/tmdb'
 
-export default function MovieDetailClient({ movie, type }) {
+type ServerKey = 'vidlink' | 'vidsrc' | 'multiembed'
+
+interface MovieDetailClientProps {
+  movie: TmdbMediaDetails
+  type: MediaType
+}
+
+const SERVER_OPTIONS: ReadonlyArray<[ServerKey, string]> = [
+  ['vidlink', 'Server 1'],
+  ['vidsrc', 'Server 2'],
+  ['multiembed', 'Server 3'],
+]
+
+export default function MovieDetailClient({ movie, type }: MovieDetailClientProps) {
   const router = useRouter()
 
   const [showPlayer, setShowPlayer] = useState(false)
-  const [selectedSeason, setSelectedSeason] = useState(null)
-  const [selectedEpisode, setSelectedEpisode] = useState(null)
-  const [episodes, setEpisodes] = useState([])
+  const [selectedSeason, setSelectedSeason] = useState<number | null>(null)
+  const [selectedEpisode, setSelectedEpisode] = useState<number | null>(null)
+  const [episodes, setEpisodes] = useState<TmdbEpisode[]>([])
   const [loadingEpisodes, setLoadingEpisodes] = useState(false)
   const [inWatchlist, setInWatchlist] = useState(false)
 
-  const title = movie?.title || movie?.name
+  const title = movie?.title || movie?.name || 'Untitled'
   const date = movie?.release_date || movie?.first_air_date
   const year = date?.split('-')[0]
   const rating = movie?.vote_average?.toFixed(1)
@@ -35,8 +55,8 @@ export default function MovieDetailClient({ movie, type }) {
     ? (movie?.seasons || []).filter((s) => s.season_number > 0)
     : []
 
-  const [activeServer, setActiveServer] = useState('vidlink')
-  const playerRef = useRef(null)
+  const [activeServer, setActiveServer] = useState<ServerKey>('vidlink')
+  const playerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
@@ -44,7 +64,7 @@ export default function MovieDetailClient({ movie, type }) {
     }
   }, [])
 
-  const servers = {
+  const servers: Record<ServerKey, string> = {
     vidlink: type === 'tv' && selectedSeason && selectedEpisode
       ? `https://vidlink.pro/tv/${movie?.id}/${selectedSeason}/${selectedEpisode}?autoplay=false`
       : `https://vidlink.pro/movie/${movie?.id}?autoplay=false`,
@@ -62,7 +82,7 @@ export default function MovieDetailClient({ movie, type }) {
   useEffect(() => {
     if (!movie?.id) return
     try {
-      const list = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
+      const list: WatchlistItem[] = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
       setInWatchlist(list.some((i) => i.id === movie.id))
     } catch {}
   }, [movie?.id])
@@ -71,7 +91,7 @@ export default function MovieDetailClient({ movie, type }) {
   useEffect(() => {
     if (type !== 'tv' || !movie?.id) return
     try {
-      const history = JSON.parse(localStorage.getItem('cineflicker_continue') || '[]')
+      const history: ContinueWatchingItem[] = JSON.parse(localStorage.getItem('cineflicker_continue') || '[]')
       const entry = history.find((i) => i.id === movie.id)
       if (entry?.season) setSelectedSeason(entry.season)
     } catch {}
@@ -89,22 +109,30 @@ export default function MovieDetailClient({ movie, type }) {
 
   if (!movie) return null
 
-  const handleSeasonSelect = (seasonNum) => {
+  const handleSeasonSelect = (seasonNum: number) => {
     setSelectedSeason(seasonNum)
     setSelectedEpisode(null)
     setShowPlayer(false)
   }
 
-  const saveToHistory = (season = null, episode = null) => {
+  const saveToHistory = (season: number | null = null, episode: number | null = null) => {
     try {
-      const existing = JSON.parse(localStorage.getItem('cineflicker_continue') || '[]')
+      const existing: ContinueWatchingItem[] = JSON.parse(localStorage.getItem('cineflicker_continue') || '[]')
       const filtered = existing.filter((i) => i.id !== movie.id)
-      const entry = { id: movie.id, title, type, poster: movie?.poster_path, season, episode, watchedAt: Date.now() }
+      const entry: ContinueWatchingItem = {
+        id: movie.id,
+        title,
+        type,
+        poster: movie?.poster_path ?? null,
+        season,
+        episode,
+        watchedAt: Date.now(),
+      }
       localStorage.setItem('cineflicker_continue', JSON.stringify([entry, ...filtered].slice(0, 20)))
     } catch {}
   }
 
-  const handleEpisodePlay = (episodeNum) => {
+  const handleEpisodePlay = (episodeNum: number) => {
     setSelectedEpisode(episodeNum)
     setShowPlayer(true)
     saveToHistory(selectedSeason, episodeNum)
@@ -113,14 +141,20 @@ export default function MovieDetailClient({ movie, type }) {
 
   const toggleWatchlist = () => {
     try {
-      const list = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
+      const list: WatchlistItem[] = JSON.parse(localStorage.getItem('cineflicker_watchlist') || '[]')
       const exists = list.some((i) => i.id === movie.id)
-      const updated = exists
+      const updated: WatchlistItem[] = exists
         ? list.filter((i) => i.id !== movie.id)
-        : [{ id: movie.id, title, type, poster: movie?.poster_path, date }, ...list]
+        : [{ id: movie.id, title, type, poster: movie?.poster_path ?? null, date }, ...list]
       localStorage.setItem('cineflicker_watchlist', JSON.stringify(updated))
       setInWatchlist(!exists)
     } catch {}
+  }
+
+  const iframeExtraProps: Record<string, string | boolean> = {
+    'webkit-playsinline': 'true',
+    playsInline: true,
+    scrolling: 'no',
   }
 
   return (
@@ -261,7 +295,7 @@ export default function MovieDetailClient({ movie, type }) {
                 <div className="flex items-center justify-between px-4 py-2 bg-flicker-card border-b border-flicker-border">
                   <div className="flex items-center gap-2">
                     <span className="text-flicker-gray text-xs">Server:</span>
-                    {[['vidlink', 'Server 1'], ['vidsrc', 'Server 2'], ['multiembed', 'Server 3']].map(([key, label]) => (
+                    {SERVER_OPTIONS.map(([key, label]) => (
                       <button
                         key={key}
                         onClick={() => setActiveServer(key)}
@@ -282,10 +316,8 @@ export default function MovieDetailClient({ movie, type }) {
                     className="w-full h-full border-0"
                     allowFullScreen
                     allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
-                    webkit-playsinline="true"
-                    playsInline
                     referrerPolicy="no-referrer"
-                    scrolling="no"
+                    {...iframeExtraProps}
                   />
                 </div>
               </div>
@@ -384,7 +416,7 @@ export default function MovieDetailClient({ movie, type }) {
                     <span className="text-white text-sm font-medium">S{selectedSeason} · E{selectedEpisode}</span>
                     <div className="flex items-center gap-2">
                       <span className="text-flicker-gray text-xs">Server:</span>
-                      {[['vidlink', 'Server 1'], ['vidsrc', 'Server 2'], ['multiembed', 'Server 3']].map(([key, label]) => (
+                      {SERVER_OPTIONS.map(([key, label]) => (
                         <button
                           key={key}
                           onClick={() => setActiveServer(key)}
@@ -406,10 +438,8 @@ export default function MovieDetailClient({ movie, type }) {
                     className="w-full h-full border-0"
                     allowFullScreen
                     allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
-                    webkit-playsinline="true"
-                    playsInline
                     referrerPolicy="no-referrer"
-                    scrolling="no"
+                    {...iframeExtraProps}
                   />
                 </div>
               </div>
@@ -424,23 +454,26 @@ export default function MovieDetailClient({ movie, type }) {
               <h2 className="text-white font-semibold text-xl">Cast</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-4">
-              {cast.map((person) => (
-                <motion.div key={person.id} whileHover={{ y: -4 }} className="text-center">
-                  <div className="aspect-square rounded-2xl overflow-hidden bg-flicker-card border border-flicker-border mb-2">
-                    {person.profile_path ? (
-                      <img
-                        src={getImageUrl(person.profile_path, 'w185')}
-                        alt={person.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl">👤</div>
-                    )}
-                  </div>
-                  <p className="text-white text-xs font-medium line-clamp-1">{person.name}</p>
-                  <p className="text-flicker-gray text-xs line-clamp-1">{person.character}</p>
-                </motion.div>
-              ))}
+              {cast.map((person) => {
+                const profileUrl = getImageUrl(person.profile_path, 'w185')
+                return (
+                  <motion.div key={person.id} whileHover={{ y: -4 }} className="text-center">
+                    <div className="aspect-square rounded-2xl overflow-hidden bg-flicker-card border border-flicker-border mb-2">
+                      {profileUrl ? (
+                        <img
+                          src={profileUrl}
+                          alt={person.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl">👤</div>
+                      )}
+                    </div>
+                    <p className="text-white text-xs font-medium line-clamp-1">{person.name}</p>
+                    <p className="text-flicker-gray text-xs line-clamp-1">{person.character}</p>
+                  </motion.div>
+                )
+              })}
             </div>
           </div>
         )}

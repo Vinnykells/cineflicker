@@ -7,8 +7,9 @@ import MovieCard from '@/components/MovieCard'
 import SkeletonCard from '@/components/SkeletonCard'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import type { MediaType, TmdbGenre, TmdbMediaItem } from '@/types/tmdb'
 
-const MOVIE_GENRES = [
+const MOVIE_GENRES: TmdbGenre[] = [
   { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' },
   { id: 35, name: 'Comedy' }, { id: 80, name: 'Crime' }, { id: 99, name: 'Documentary' },
   { id: 18, name: 'Drama' }, { id: 14, name: 'Fantasy' }, { id: 27, name: 'Horror' },
@@ -16,16 +17,18 @@ const MOVIE_GENRES = [
   { id: 53, name: 'Thriller' }, { id: 10752, name: 'War' },
 ]
 
-const TV_GENRES = [
+const TV_GENRES: TmdbGenre[] = [
   { id: 10759, name: 'Action & Adventure' }, { id: 16, name: 'Animation' }, { id: 35, name: 'Comedy' },
   { id: 80, name: 'Crime' }, { id: 99, name: 'Documentary' }, { id: 18, name: 'Drama' },
   { id: 10765, name: 'Sci-Fi & Fantasy' }, { id: 9648, name: 'Mystery' }, { id: 10768, name: 'War & Politics' },
 ]
 
+const MEDIA_TYPES: MediaType[] = ['movie', 'tv']
+
 export default function GenresPage() {
-  const [mediaType, setMediaType] = useState('movie')
-  const [selectedGenre, setSelectedGenre] = useState(null)
-  const [results, setResults] = useState([])
+  const [mediaType, setMediaType] = useState<MediaType>('movie')
+  const [selectedGenre, setSelectedGenre] = useState<number | null>(null)
+  const [results, setResults] = useState<TmdbMediaItem[]>([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -37,20 +40,20 @@ export default function GenresPage() {
     setLoading(true)
     discoverByGenre(selectedGenre, mediaType, page)
       .then(({ data }) => {
-        setResults((prev) => page === 1 ? data.results : [...prev, ...data.results])
+        setResults((prev) => (page === 1 ? data.results : [...prev, ...data.results]))
         setTotalPages(Math.min(data.total_pages, 10))
       })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [selectedGenre, mediaType, page])
 
-  const handleGenreSelect = (id) => {
+  const handleGenreSelect = (id: number) => {
     setSelectedGenre(id)
     setPage(1)
     setResults([])
   }
 
-  const handleMediaTypeSwitch = (type) => {
+  const handleMediaTypeSwitch = (type: MediaType) => {
     setMediaType(type)
     setSelectedGenre(null)
     setResults([])
@@ -66,7 +69,7 @@ export default function GenresPage() {
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-6">Genres</h1>
 
           <div className="flex gap-2 mb-6">
-            {['movie', 'tv'].map((t) => (
+            {MEDIA_TYPES.map((t) => (
               <button
                 key={t}
                 onClick={() => handleMediaTypeSwitch(t)}
