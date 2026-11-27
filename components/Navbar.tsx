@@ -14,14 +14,32 @@ const NAV_LINKS = [
   { label: 'Watchlist', href: '/watchlist' },
 ]
 
+const WHATS_NEW_KEY = 'cineflicker_whats_new_pip_v1'
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showUpdateBanner, setShowUpdateBanner] = useState(false)
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState<TmdbMediaItem[]>([])
   const router = useRouter()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(WHATS_NEW_KEY)) {
+        setShowUpdateBanner(true)
+      }
+    } catch {}
+  }, [])
+
+  const dismissUpdateBanner = () => {
+    setShowUpdateBanner(false)
+    try {
+      localStorage.setItem(WHATS_NEW_KEY, '1')
+    } catch {}
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -235,6 +253,34 @@ export default function Navbar() {
 
               <p className="text-flicker-gray text-sm mt-4 text-center">Press ESC to close</p>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showUpdateBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-5 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-40 bg-flicker-card/95 backdrop-blur-xl border border-flicker-border rounded-2xl p-4 shadow-2xl flex items-start gap-3"
+          >
+            <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-flicker-red text-white flex-shrink-0 mt-0.5">
+              New
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-xs font-semibold mb-0.5">Floating Picture-in-Picture</p>
+              <p className="text-flicker-gray text-xs leading-relaxed">
+                Hit <span className="text-white font-medium">⧉ PiP</span> in the player to pop out any movie or episode while you work.
+              </p>
+            </div>
+            <button
+              onClick={dismissUpdateBanner}
+              aria-label="Dismiss update notice"
+              className="text-flicker-gray hover:text-white text-xs flex-shrink-0 transition-colors"
+            >
+              ✕
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

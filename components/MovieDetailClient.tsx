@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { getImageUrl, getBackdropUrl, getSeasonDetails } from '@/lib/tmdb'
 import MovieCard from './MovieCard'
+import VideoPlayer, { type ServerKey } from './VideoPlayer'
 import type {
   ContinueWatchingItem,
   MediaType,
@@ -13,18 +14,10 @@ import type {
   WatchlistItem,
 } from '@/types/tmdb'
 
-type ServerKey = 'vidlink' | 'vidsrc' | 'multiembed'
-
 interface MovieDetailClientProps {
   movie: TmdbMediaDetails
   type: MediaType
 }
-
-const SERVER_OPTIONS: ReadonlyArray<[ServerKey, string]> = [
-  ['vidlink', 'Server 1'],
-  ['vidsrc', 'Server 2'],
-  ['multiembed', 'Server 3'],
-]
 
 export default function MovieDetailClient({ movie, type }: MovieDetailClientProps) {
   const router = useRouter()
@@ -149,12 +142,6 @@ export default function MovieDetailClient({ movie, type }: MovieDetailClientProp
       localStorage.setItem('cineflicker_watchlist', JSON.stringify(updated))
       setInWatchlist(!exists)
     } catch {}
-  }
-
-  const iframeExtraProps: Record<string, string | boolean> = {
-    'webkit-playsinline': 'true',
-    playsInline: true,
-    scrolling: 'no',
   }
 
   return (
@@ -291,36 +278,17 @@ export default function MovieDetailClient({ movie, type }: MovieDetailClientProp
 
             {/* Movie player */}
             {type !== 'tv' && (
-              <div ref={playerRef} className={`mb-10 rounded-2xl border border-flicker-border overflow-hidden transition-all duration-300 ${showPlayer ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden border-0'}`}>
-                <div className="flex items-center justify-between px-4 py-2 bg-flicker-card border-b border-flicker-border">
-                  <div className="flex items-center gap-2">
-                    <span className="text-flicker-gray text-xs">Server:</span>
-                    {SERVER_OPTIONS.map(([key, label]) => (
-                      <button
-                        key={key}
-                        onClick={() => setActiveServer(key)}
-                        className={`px-3 py-1 text-xs rounded-full font-medium transition ${
-                          activeServer === key ? 'bg-flicker-red text-white' : 'bg-flicker-dark text-flicker-gray hover:text-white'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  <button onClick={() => setShowPlayer(false)} className="text-flicker-gray text-xs hover:text-white transition">✕ Close</button>
-                </div>
-                <div className="aspect-video w-full">
-                  <iframe
-                    key={`${activeServer}-${movie?.id}`}
-                    src={showPlayer ? embedUrl : undefined}
-                    className="w-full h-full border-0"
-                    allowFullScreen
-                    allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
-                    referrerPolicy="no-referrer"
-                    {...iframeExtraProps}
-                  />
-                </div>
-              </div>
+              <VideoPlayer
+                ref={playerRef}
+                embedUrl={embedUrl}
+                iframeKey={`${activeServer}-${movie?.id}`}
+                activeServer={activeServer}
+                onSelectServer={setActiveServer}
+                showPlayer={showPlayer}
+                onClose={() => setShowPlayer(false)}
+                title={title}
+                className="mb-10"
+              />
             )}
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6 p-6 rounded-2xl bg-flicker-card border border-flicker-border">
@@ -410,39 +378,18 @@ export default function MovieDetailClient({ movie, type }: MovieDetailClientProp
             )}
 
             {selectedEpisode && (
-              <div ref={playerRef} className={`mt-6 rounded-2xl border border-flicker-border overflow-hidden transition-all duration-300 ${showPlayer ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden border-0'}`}>
-                <div className="flex items-center justify-between px-4 py-2 bg-flicker-card border-b border-flicker-border">
-                  <div className="flex items-center gap-3">
-                    <span className="text-white text-sm font-medium">S{selectedSeason} · E{selectedEpisode}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-flicker-gray text-xs">Server:</span>
-                      {SERVER_OPTIONS.map(([key, label]) => (
-                        <button
-                          key={key}
-                          onClick={() => setActiveServer(key)}
-                          className={`px-3 py-1 text-xs rounded-full font-medium transition ${
-                            activeServer === key ? 'bg-flicker-red text-white' : 'bg-flicker-dark text-flicker-gray hover:text-white'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <button onClick={() => setShowPlayer(false)} className="text-flicker-gray text-xs hover:text-white transition">✕ Close</button>
-                </div>
-                <div className="aspect-video w-full">
-                  <iframe
-                    key={`${activeServer}-${movie?.id}-${selectedSeason}-${selectedEpisode}`}
-                    src={showPlayer ? embedUrl : undefined}
-                    className="w-full h-full border-0"
-                    allowFullScreen
-                    allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
-                    referrerPolicy="no-referrer"
-                    {...iframeExtraProps}
-                  />
-                </div>
-              </div>
+              <VideoPlayer
+                ref={playerRef}
+                embedUrl={embedUrl}
+                iframeKey={`${activeServer}-${movie?.id}-${selectedSeason}-${selectedEpisode}`}
+                activeServer={activeServer}
+                onSelectServer={setActiveServer}
+                showPlayer={showPlayer}
+                onClose={() => setShowPlayer(false)}
+                title={title}
+                episodeLabel={`S${selectedSeason} · E${selectedEpisode}`}
+                className="mt-6"
+              />
             )}
           </div>
         )}
